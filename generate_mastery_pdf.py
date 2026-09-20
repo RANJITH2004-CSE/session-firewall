@@ -1,0 +1,815 @@
+import os
+from playwright.sync_api import sync_playwright
+
+html_content = """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Session Firewall - Enterprise Security Mastery Guide</title>
+<style>
+  @page {
+    size: A4;
+    margin: 20mm 15mm 20mm 15mm;
+    @bottom-right {
+      content: "Page " counter(page) " of " counter(pages);
+      font-size: 8pt;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #64748b;
+    }
+    @bottom-left {
+      content: "SecureBank • Session Firewall Enterprise Security System";
+      font-size: 8pt;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #64748b;
+    }
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    color: #0f172a;
+    background-color: #ffffff;
+    line-height: 1.55;
+    font-size: 10pt;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Cover Page */
+  .cover-page {
+    page-break-after: always;
+    height: 90vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 40px 20px;
+  }
+
+  .cover-badge {
+    background: #1e3a8a;
+    color: #ffffff;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 9pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 25px;
+  }
+
+  .cover-title {
+    font-size: 34pt;
+    font-weight: 900;
+    color: #0f172a;
+    line-height: 1.15;
+    margin: 0 0 15px 0;
+  }
+
+  .cover-subtitle {
+    font-size: 14pt;
+    color: #3b82f6;
+    font-weight: 600;
+    line-height: 1.4;
+    margin: 0 0 35px 0;
+  }
+
+  .cover-divider {
+    width: 120px;
+    height: 4px;
+    background: #2563eb;
+    margin-bottom: 40px;
+  }
+
+  .cover-meta {
+    font-size: 9.5pt;
+    color: #475569;
+    line-height: 1.8;
+  }
+
+  .cover-meta strong {
+    color: #0f172a;
+  }
+
+  /* Headings */
+  h1 {
+    font-size: 20pt;
+    color: #0f172a;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 8px;
+    margin-top: 35px;
+    margin-bottom: 15px;
+    page-break-before: auto;
+  }
+
+  h2 {
+    font-size: 14pt;
+    color: #1e3a8a;
+    margin-top: 25px;
+    margin-bottom: 10px;
+  }
+
+  h3 {
+    font-size: 11pt;
+    color: #334155;
+    margin-top: 18px;
+    margin-bottom: 6px;
+  }
+
+  p {
+    margin: 0 0 10px 0;
+    text-align: justify;
+  }
+
+  /* Callout Boxes */
+  .callout {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin: 15px 0;
+    font-size: 9.5pt;
+  }
+
+  .callout-info {
+    background: #eff6ff;
+    border-left: 4px solid #3b82f6;
+    color: #1e3a8a;
+  }
+
+  .callout-warning {
+    background: #fefce8;
+    border-left: 4px solid #eab308;
+    color: #854d0e;
+  }
+
+  .callout-danger {
+    background: #fef2f2;
+    border-left: 4px solid #ef4444;
+    color: #991b1b;
+  }
+
+  .callout-success {
+    background: #f0fdf4;
+    border-left: 4px solid #22c55e;
+    color: #166534;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+    font-size: 8.5pt;
+  }
+
+  th {
+    background: #0f172a;
+    color: #ffffff;
+    text-align: left;
+    padding: 8px 10px;
+    font-weight: 600;
+  }
+
+  td {
+    padding: 7px 10px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  tr:nth-child(even) td {
+    background: #f8fafc;
+  }
+
+  /* Code Blocks */
+  pre {
+    background: #0f172a;
+    color: #f8fafc;
+    padding: 12px 14px;
+    border-radius: 6px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 8pt;
+    line-height: 1.45;
+    overflow-x: auto;
+    margin: 12px 0;
+  }
+
+  code {
+    font-family: 'Consolas', 'Courier New', monospace;
+    background: #f1f5f9;
+    color: #0f172a;
+    padding: 1px 4px;
+    border-radius: 4px;
+    font-size: 8.5pt;
+  }
+
+  pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+  }
+
+  /* Badges */
+  .badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 7.5pt;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .badge-low { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+  .badge-med { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+  .badge-high { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+
+  /* Diagram Box */
+  .diagram-box {
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 14px;
+    margin: 15px 0;
+    font-family: 'Consolas', monospace;
+    font-size: 8pt;
+    white-space: pre;
+    line-height: 1.35;
+    color: #1e293b;
+  }
+
+  .page-break {
+    page-break-after: always;
+  }
+</style>
+</head>
+<body>
+
+<!-- COVER PAGE -->
+<div class="cover-page">
+  <div class="cover-badge">SecureBank Cybersecurity Whitepaper</div>
+  <div class="cover-title">SESSION FIREWALL</div>
+  <div class="cover-subtitle">Complete Architecture, Behavioral Anomaly Detection, Unauthorized Access Tracking & Defensive Mastery Guide</div>
+  <div class="cover-divider"></div>
+  <div class="cover-meta">
+    <p><strong>System:</strong> Real-Time Zero-Trust Session Security & Geovelocity Firewall</p>
+    <p><strong>Version:</strong> 1.0.0 Production Blueprint</p>
+    <p><strong>Tech Stack:</strong> Node.js, Express, React, Tailwind CSS, MongoDB, JWT</p>
+    <p><strong>Audience:</strong> Security Engineers, Full-Stack Architects & Financial DevOps</p>
+    <p><strong>Published:</strong> September 2026</p>
+  </div>
+</div>
+
+<!-- SECTION 1: EXECUTIVE SUMMARY -->
+<h1>1. Executive Summary & Zero-Trust Paradigm</h1>
+<p>
+Modern digital banking architectures face an asymmetric threat landscape. Traditional authentication frameworks rely on static perimeter verification: once a customer enters their username and password, the resulting session token is typically treated as unconditionally trusted until expiration. This model fails against modern attack vectors, such as:
+</p>
+<ul>
+  <li><strong>Session Token Hijacking:</strong> Adversaries intercepting or stealing active tokens via compromised endpoints, local storage exfiltration, or proxy compromises.</li>
+  <li><strong>Credential Stuffing & Botnet Attacks:</strong> Automated attempts utilizing stolen credentials from third-party database breaches.</li>
+  <li><strong>Geographic Proxy Spoofing:</strong> Attackers routing traffic through foreign residential proxies or cloud hosting providers.</li>
+  <li><strong>Concurrent Account Access:</strong> Attackers authenticating simultaneously from distant countries while legitimate users are actively logged in.</li>
+</ul>
+
+<div class="callout callout-info">
+  <strong>The Session Firewall Principle:</strong> Authentication is never a one-time gate. In Session Firewall, every incoming request and token usage is evaluated continuously against an adaptive behavioral baseline. Telemetry anomalies instantly adjust the user's risk posture, automatically triggering step-up authentication, session termination, or global quarantine.
+</div>
+
+<div class="diagram-box">
++-----------------------------------------------------------------------------------------+
+|                              SESSION FIREWALL ARCHITECTURE                              |
++-----------------------------------------------------------------------------------------+
+                                 [ Incoming Request ]
+                                          |
+                      +-------------------+-------------------+
+                      | Extract Telemetry (IP, UA, Fingerprint)|
+                      +-------------------+-------------------+
+                                          |
+                    +---------------------v---------------------+
+                    |     Firewall Global Quarantine Filter     |
+                    |      Is IP or Device on Blocklist?        |
+                    +---------------------+---------------------+
+                                          | No
+                    +---------------------v---------------------+
+                    |    8-Rule Behavioral Risk Engine          |
+                    |  - Geovelocity (Haversine Formula)       |
+                    |  - Known Device Fingerprint Matching      |
+                    |  - Historical Location Corridors         |
+                    |  - VPN / Proxy Exit Node Heuristics       |
+                    |  - Failed Authentication Spikes          |
+                    |  - Mid-Session IP/Device Drift           |
+                    |  - Financial Transfer Anomaly Check       |
+                    +---------------------+---------------------+
+                                          |
+                     +--------------------+--------------------+
+                     | Cumulative Risk Score (0 to 100+ points)|
+                     +--------------------+--------------------+
+                                          |
+         +--------------------------------+-------------------------------+
+         |                                |                               |
+[ 0 - 29 Points ]                [ 30 - 59 Points ]              [ 60+ Points ]
+    LOW RISK                         MEDIUM RISK                    HIGH RISK
+ Session Allowed               Step-Up MFA Required            Session Quarantined
+ Full Banking Access           Simulated OTP Verification     Transfers Restricted
+                                                              Admin SOC Incident Logged
+                                                              "Was This You?" Challenge
+</div>
+
+<div class="page-break"></div>
+
+<!-- SECTION 2: HOW SESSION TRACKING OPERATES -->
+<h1>2. Session Telemetry Tracking Mechanics</h1>
+<p>
+To accurately differentiate legitimate customer actions from unauthorized intruders, Session Firewall captures multi-dimensional telemetry on every authentication and active request:
+</p>
+
+<h2>2.1 Client Telemetry Ingestion</h2>
+<p>
+The ingestion engine extracts client characteristics without requiring invasive client-side agents. The attributes are parsed from standard HTTP protocol headers:
+</p>
+<ul>
+  <li><strong>User-Agent Parsing:</strong> Utilizes <code>ua-parser-js</code> to decompose the raw header into structured components: browser family and version, operating system architecture, and device class (Desktop, Mobile, Tablet).</li>
+  <li><strong>Device Signature Fingerprinting:</strong> Combines Browser Name, OS Version, and architecture into a normalized fingerprint string (e.g., <code>"Chrome 122 on Windows 11"</code> or <code>"Firefox 124 on macOS Sonoma"</code>).</li>
+  <li><strong>IP Address Extraction:</strong> Resolves client IP via <code>x-forwarded-for</code> headers (for reverse proxy architectures) with fallback to direct socket remote addresses.</li>
+  <li><strong>Geographic Coordinates & Geocoding:</strong> Resolves IP address to latitude, longitude, city, country, and ASN attributes.</li>
+</ul>
+
+<h2>2.2 The Geovelocity & Haversine Formula</h2>
+<p>
+To detect "impossible travel" (such as a session in Mumbai followed by a session in New York 10 minutes later), the system calculates great-circle distance using the <strong>Haversine Formula</strong>:
+</p>
+
+<pre><code>function calculateDistanceKm(lat1, lon1, lat2, lon2) {
+  const R = 6371; // Earth's mean radius in kilometers
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+function calculateTravelSpeed(loc1, time1, loc2, time2) {
+  const distanceKm = calculateDistanceKm(loc1.latitude, loc1.longitude, loc2.latitude, loc2.longitude);
+  const elapsedHours = Math.abs(new Date(time2) - new Date(time1)) / (1000 * 60 * 60);
+  return elapsedHours === 0 ? (distanceKm > 50 ? 999999 : 0) : (distanceKm / elapsedHours);
+}</code></pre>
+
+<div class="callout callout-warning">
+  <strong>Commercial Airline Speed Boundary:</strong> Maximum commercial flight speed is approximately 800–900 km/h. If consecutive logins require an average ground velocity exceeding <strong>800 km/h</strong> across a distance greater than 200 km, the system flags an <em>Impossible Travel Anomaly</em> (+40 points).
+</div>
+
+<div class="page-break"></div>
+
+<!-- SECTION 3: 8-RULE BEHAVIORAL RISK SCORING ENGINE -->
+<h1>3. Anomaly & Threat Detection Engine</h1>
+<p>
+The core risk engine evaluates sessions against 8 quantitative rules. Points accumulate into a composite threat index:
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Threat Indicator</th>
+      <th>Points</th>
+      <th>Technical Detection Mechanism</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>1</strong></td>
+      <td>New / Unrecognized Device</td>
+      <td><strong>+30</strong></td>
+      <td>Device fingerprint does not match any entry in <code>user.trustedDevices</code> or recent allowed sessions.</td>
+    </tr>
+    <tr>
+      <td><strong>2</strong></td>
+      <td>New IP Address</td>
+      <td><strong>+15</strong></td>
+      <td>IP address has not been observed in the user's historical allowed session baseline.</td>
+    </tr>
+    <tr>
+      <td><strong>3</strong></td>
+      <td>Unusual City or Country</td>
+      <td><strong>+30</strong></td>
+      <td>Current location is outside <code>user.trustedLocations</code> and not seen in prior legitimate logins.</td>
+    </tr>
+    <tr>
+      <td><strong>4</strong></td>
+      <td>VPN / Proxy / Datacenter IP</td>
+      <td><strong>+15</strong></td>
+      <td>IP address matches known Tor exit nodes, hosting provider ranges (AWS, DigitalOcean), or commercial VPN ranges.</td>
+    </tr>
+    <tr>
+      <td><strong>5</strong></td>
+      <td>Impossible Travel Velocity</td>
+      <td><strong>+40</strong></td>
+      <td>Haversine distance divided by elapsed time between consecutive sessions exceeds 800 km/h.</td>
+    </tr>
+    <tr>
+      <td><strong>6</strong></td>
+      <td>Failed Login Attempts (>= 3)</td>
+      <td><strong>+25</strong></td>
+      <td>Account experienced 3 or more consecutive bad password attempts prior to current authentication.</td>
+    </tr>
+    <tr>
+      <td><strong>7</strong></td>
+      <td>Mid-Session Telemetry Drift</td>
+      <td><strong>+25</strong></td>
+      <td>Active token was issued to Device A / IP A, but subsequent API calls originate from Device B or IP B.</td>
+    </tr>
+    <tr>
+      <td><strong>8</strong></td>
+      <td>Large / Unusual Transfer</td>
+      <td><strong>+25</strong></td>
+      <td>Outgoing transfer exceeds $5,000 or exceeds 50% of the customer's total balance.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>3.1 Risk Tiers & Automated Enforcement Actions</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Score Tier</th>
+      <th>Classification</th>
+      <th>System Action</th>
+      <th>User Impact</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>0 – 29</strong></td>
+      <td><span class="badge badge-low">LOW RISK</span></td>
+      <td><strong>Allow Session</strong></td>
+      <td>Normal access. Session token minted. Balance and transfers fully enabled.</td>
+    </tr>
+    <tr>
+      <td><strong>30 – 59</strong></td>
+      <td><span class="badge badge-med">MEDIUM RISK</span></td>
+      <td><strong>Require MFA Verification</strong></td>
+      <td>Session held in <code>MFA Required</code> state. Simulated 6-digit OTP dispatched to user. Access restricted until code verified.</td>
+    </tr>
+    <tr>
+      <td><strong>60+</strong></td>
+      <td><span class="badge badge-high">HIGH RISK</span></td>
+      <td><strong>Quarantine & Lockdown</strong></td>
+      <td>Session marked <code>Blocked</code>. Transfers locked on user account. In-app & simulated email notification sent. Incident logged in Admin SOC.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout callout-danger">
+  <strong>Attribution Disclaimer:</strong> In compliance with security best practices, the system identifies <em>suspicious and anomalous behavioral patterns</em> rather than claiming absolute identity attribution of an external attacker. Legitimate customers are given self-service verification ("Was this you?") to confirm or deny unexpected access.
+</div>
+
+<div class="page-break"></div>
+
+<!-- SECTION 4: HOW UNAUTHORIZED ACCESS IS SIMULATED AND TESTED -->
+<h1>4. How Unauthorized Access is Tested & Simulated</h1>
+<p>
+Security teams and QA engineers must verify that the Session Firewall reacts predictably to attack scenarios. The system includes built-in test runners and telemetry injection interfaces to test attacks safely:
+</p>
+
+<h2>4.1 Scenario 1: Safe Baseline Authentication</h2>
+<p>
+Simulates a legitimate user logging in from their home office workstation:
+</p>
+<ul>
+  <li><strong>Device:</strong> <code>Chrome 122 on Windows 11</code> (Matches trusted device)</li>
+  <li><strong>IP Address:</strong> <code>103.21.244.0</code> (Mumbai, India)</li>
+  <li><strong>Elapsed Time:</strong> 5 hours since last session</li>
+  <li><strong>Calculated Score:</strong> <code>0 points</code> &rarr; <span class="badge badge-low">LOW RISK</span></li>
+  <li><strong>System Behavior:</strong> Access granted immediately. No MFA challenged. No security alerts.</li>
+</ul>
+
+<h2>4.2 Scenario 2: Impossible Travel & Credential Compromise Attack</h2>
+<p>
+Simulates an adversary using stolen credentials from a foreign server shortly after the legitimate user was active:
+</p>
+<ul>
+  <li><strong>Baseline Session:</strong> Alex Mercer authenticated in Mumbai, India 10 minutes ago.</li>
+  <li><strong>Adversary Influx:</strong> Login initiated from <code>New York, United States</code> (IP: <code>198.51.100.42</code>) using <code>Firefox 124 on macOS Sonoma</code>.</li>
+  <li><strong>Firewall Evaluation:</strong>
+    <ul>
+      <li>Unrecognized Device Signature: <strong>+30 pts</strong></li>
+      <li>New IP Address: <strong>+15 pts</strong></li>
+      <li>Unusual Country / City: <strong>+30 pts</strong></li>
+      <li>Impossible Travel (12,538 km in 10 mins &rarr; speed > 25,000 km/h): <strong>+40 pts</strong></li>
+      <li><strong>Total Score: 115 points</strong> &rarr; <span class="badge badge-high">HIGH RISK</span></li>
+    </ul>
+  </li>
+  <li><strong>Automated Defensive Actions Executed:</strong>
+    <ol>
+      <li>Adversary session is immediately set to <code>Blocked</code> and rejected with HTTP <code>403 Forbidden</code>.</li>
+      <li>Customer account transfers are restricted: <code>transfersLocked = true</code>.</li>
+      <li>In-app alert generated: <em>"Suspicious login detected from Firefox on macOS in New York at 10:35 AM. Was this you?"</em></li>
+      <li>Simulated outgoing email dispatched to customer's inbox.</li>
+      <li>Security incident registered in Bank Admin SOC with status <code>Blocked</code>.</li>
+    </ol>
+  </li>
+</ul>
+
+<h2>4.3 Scenario 3: Mid-Session Hijacking / Drift Simulation</h2>
+<p>
+Simulates token exfiltration where an adversary steals the JWT token and makes API calls from a different IP or device:
+</p>
+<pre><code>// Auth Middleware detects drift on incoming request:
+const ipChanged = origSession.ipAddress !== currentRequestIp;
+const deviceChanged = origSession.device !== currentRequestDevice;
+
+if (ipChanged || deviceChanged) {
+  // Triggers Rule 7 (+25 points)
+  // If cumulative risk >= 60, session is immediately revoked mid-flight!
+}</code></pre>
+
+<div class="page-break"></div>
+
+<!-- SECTION 5: CUSTOMER LOCKDOWN WORKFLOW -->
+<h1>5. Customer Security Lockdown Workflow</h1>
+<p>
+When an unauthorized login is flagged, the legitimate customer is presented with an urgent challenge modal and email notification:
+</p>
+
+<div class="callout callout-danger">
+  <strong>In-App Alert Prompt:</strong><br>
+  <em>"Suspicious login detected from Firefox 124 on macOS Sonoma in New York at 10:35 AM. Was this you?"</em><br>
+  <strong>Options:</strong> [ Yes, it was me ] | [ No, secure my account ]
+</div>
+
+<h2>5.1 Workflow Execution on "No, secure my account"</h2>
+<p>
+When the customer confirms that the session was unauthorized, the backend initiates a comprehensive 5-step containment procedure:
+</p>
+
+<div class="diagram-box">
+[ Customer Clicks "No, secure my account" ]
+                    |
+                    v
+ 1. REVOKE ATTACKER SESSION
+    - Marked as "Confirmed Fraud"
+    - Token invalidated immediately
+                    |
+                    v
+ 2. TERMINATE ALL OTHER CONCURRENT SESSIONS
+    - All non-trusted active sessions closed
+    - Preserves only the user's current verified session
+                    |
+                    v
+ 3. POPULATE GLOBAL QUARANTINE BLOCKLIST
+    - Adversary IP (198.51.100.42) added to Blocklist
+    - Adversary Device fingerprint quarantined
+                    |
+                    v
+ 4. LOCK OUTGOING WIRE & ACH TRANSFERS
+    - user.transfersLocked = true
+    - Attempts to transfer return 403 Forbidden
+                    |
+                    v
+ 5. NOTIFY BANK SOC & DISPATCH INSTRUCTIONS
+    - Admin SOC alert updated to "Confirmed Fraud"
+    - Simulated email sent with password reset guidance
+</div>
+
+<h2>5.2 Workflow Execution on "Yes, it was me"</h2>
+<p>
+If the customer was legitimately using a foreign VPN or new laptop:
+</p>
+<ul>
+  <li>The session status is transitioned to <code>Resolved</code>.</li>
+  <li>The device signature is added to <code>user.trustedDevices</code> so future logins will not trigger unnecessary friction.</li>
+  <li>Transfer locks resulting from the alert are cleared.</li>
+  <li>Admin SOC logs the event as customer-verified.</li>
+</ul>
+
+<div class="page-break"></div>
+
+<!-- SECTION 6: BANK SECURITY OPERATIONS CENTER (SOC) -->
+<h1>6. Bank Security Operations Center (SOC)</h1>
+<p>
+The Bank Security Administrator console provides comprehensive visibility and manual override authority over all security telemetry:
+</p>
+
+<h2>6.1 Key SOC Metrics & Telemetry Feeds</h2>
+<ul>
+  <li><strong>Total Evaluated Sessions:</strong> Aggregated throughput of all authentication events across the bank.</li>
+  <li><strong>Suspicious / MFA Flagged:</strong> Sessions requiring step-up authentication (Medium Risk: 30–59 pts).</li>
+  <li><strong>Blocked & Confirmed Fraud:</strong> High-risk attacks halted by the firewall or reported by customers.</li>
+  <li><strong>Quarantined Artifacts:</strong> Real-time count of blocked IPs and device signatures.</li>
+</ul>
+
+<h2>6.2 7-Day Threat Visualizer</h2>
+<p>
+An interactive SVG visualization plotting daily volumes:
+</p>
+<ul>
+  <li><strong>Blue Bars:</strong> Total login volume across the institution.</li>
+  <li><strong>Amber Bars:</strong> Telemetry deviations flagged as Medium Risk.</li>
+  <li><strong>Red Bars:</strong> Hard-blocked attacks and confirmed fraud reports.</li>
+</ul>
+
+<h2>6.3 Administrator Remediation Controls</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Administrative Action</th>
+      <th>Endpoint</th>
+      <th>Operational Effect</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Block / Unblock IP</strong></td>
+      <td><code>POST /api/admin/blocklist/toggle</code></td>
+      <td>Instantly quarantines or restores an IP address globally across all accounts.</td>
+    </tr>
+    <tr>
+      <td><strong>Block / Unblock Device</strong></td>
+      <td><code>POST /api/admin/blocklist/toggle</code></td>
+      <td>Adds or removes a hardware/browser fingerprint from the firewall blacklist.</td>
+    </tr>
+    <tr>
+      <td><strong>Unlock Customer Transfers</strong></td>
+      <td><code>PATCH /api/admin/users/:id/transfers</code></td>
+      <td>Restores wire and ACH transfer capabilities after customer identity verification.</td>
+    </tr>
+    <tr>
+      <td><strong>Update Session Status</strong></td>
+      <td><code>PATCH /api/admin/sessions/:id/status</code></td>
+      <td>Overrides session state to <code>Resolved</code>, <code>Blocked</code>, or <code>Confirmed Fraud</code>.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="page-break"></div>
+
+<!-- SECTION 7: API SPECIFICATION & DATA MODELS -->
+<h1>7. REST API & Data Schema Reference</h1>
+
+<h2>7.1 Data Models Schema Summary</h2>
+
+<h3>User Model (<code>models/User.js</code>)</h3>
+<pre><code>{
+  name: String,
+  email: { type: String, unique: true },
+  password: String, // Bcrypt hash
+  role: { type: String, enum: ['customer', 'admin'] },
+  accountNumber: String,
+  balance: Number, // Default $24,850.00
+  transfersLocked: Boolean,
+  transferLockReason: String,
+  failedLoginAttempts: Number,
+  trustedDevices: [String],
+  trustedLocations: [{ city: String, country: String }]
+}</code></pre>
+
+<h3>Session Model (<code>models/Session.js</code>)</h3>
+<pre><code>{
+  userId: ObjectId,
+  sessionId: { type: String, unique: true },
+  device: String,
+  browser: String,
+  os: String,
+  ipAddress: String,
+  location: { city: String, country: String, latitude: Number, longitude: Number },
+  isVpn: Boolean,
+  riskScore: Number,
+  riskReasons: [String],
+  riskLevel: { type: String, enum: ['low', 'medium', 'high'] },
+  status: { type: String, enum: ['Allowed', 'MFA Required', 'Blocked', 'Confirmed Fraud', 'Resolved'] },
+  isActive: Boolean,
+  revokedAt: Date,
+  revokedReason: String
+}</code></pre>
+
+<h2>7.2 Core Endpoints</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Method</th>
+      <th>Endpoint</th>
+      <th>Auth Required</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>POST</code></td>
+      <td><code>/api/auth/login</code></td>
+      <td>None</td>
+      <td>Evaluates credentials, extracts telemetry, calculates risk, and issues JWT or MFA challenge.</td>
+    </tr>
+    <tr>
+      <td><code>POST</code></td>
+      <td><code>/api/auth/verify-mfa</code></td>
+      <td>None</td>
+      <td>Validates simulated 6-digit OTP and activates medium-risk session.</td>
+    </tr>
+    <tr>
+      <td><code>GET</code></td>
+      <td><code>/api/sessions</code></td>
+      <td>JWT (Customer)</td>
+      <td>Returns all active/historical sessions with telemetry and current session flag.</td>
+    </tr>
+    <tr>
+      <td><code>POST</code></td>
+      <td><code>/api/sessions/mark-not-me</code></td>
+      <td>JWT (Customer)</td>
+      <td>Executes customer denial: quarantines IP/device, locks transfers, alerts admin.</td>
+    </tr>
+    <tr>
+      <td><code>POST</code></td>
+      <td><code>/api/bank/transfer</code></td>
+      <td>JWT (Customer)</td>
+      <td>Executes funds transfer with transfer lock check and financial risk policy.</td>
+    </tr>
+    <tr>
+      <td><code>GET</code></td>
+      <td><code>/api/admin/sessions</code></td>
+      <td>JWT (Admin)</td>
+      <td>Filterable security incident audit trail.</td>
+    </tr>
+    <tr>
+      <td><code>POST</code></td>
+      <td><code>/api/demo/scenario-suspicious</code></td>
+      <td>None</td>
+      <td>Executes 1-click impossible travel attack scenario for testing.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="page-break"></div>
+
+<!-- SECTION 8: PRODUCTION HARDENING & BEST PRACTICES -->
+<h1>8. Enterprise Hardening & Operational Runbook</h1>
+<p>
+For production deployment in Tier-1 financial institutions, the Session Firewall architecture can be further enhanced with the following enterprise controls:
+</p>
+
+<h2>8.1 Redis Distributed Cache & In-Memory Rate Limiting</h2>
+<p>
+In high-throughput environments processing tens of thousands of logins per second:
+</p>
+<ul>
+  <li>Store the active <strong>Quarantine Blocklist</strong> in a Redis in-memory cache or Redis Bloom Filter for sub-millisecond lookup latency.</li>
+  <li>Implement token bucket rate limiting per IP and per account to mitigate credential stuffing before invoking database queries.</li>
+</ul>
+
+<h2>8.2 Commercial GeoIP & Threat Intelligence Feeds</h2>
+<p>
+Integrate enterprise-grade intelligence providers:
+</p>
+<ul>
+  <li><strong>MaxMind GeoIP2 Precision / IPinfo:</strong> For verified geographic coordinates and cellular connection detection.</li>
+  <li><strong>Threat Intelligence APIs (Spur.us, IPQualityScore):</strong> For real-time detection of residential proxy networks and commercial VPNs.</li>
+</ul>
+
+<h2>8.3 Hardware Security Keys & FIDO2 / WebAuthn</h2>
+<p>
+For accounts requiring elevated security (corporate banking, wire desks):
+</p>
+<ul>
+  <li>Supplement simulated OTP with WebAuthn (FIDO2 / YubiKey) challenges on medium-risk sessions to completely eliminate phishing vulnerabilities.</li>
+</ul>
+
+<div class="callout callout-success">
+  <strong>Mastery Summary:</strong> Session Firewall transforms traditional static banking authentication into a dynamic, zero-trust defense network. By continuously scoring device signatures, physical velocity, and financial patterns, the platform stops unauthorized access in real-time while preserving a frictionless experience for legitimate customers.
+</div>
+
+<div style="margin-top: 40px; text-align: center; font-size: 8.5pt; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+  SecureBank Cybersecurity Research • Session Firewall Enterprise System • End of Document
+</div>
+
+</body>
+</html>
+"""
+
+# Write HTML file
+html_path = os.path.abspath("Session_Firewall_Mastery_Guide.html")
+pdf_path = os.path.abspath("Session_Firewall_Mastery_Guide.pdf")
+
+with open(html_path, "w", encoding="utf-8") as f:
+    f.write(html_content)
+
+print(f"Wrote HTML to {html_path}")
+
+# Generate PDF with Playwright using local Chrome
+with sync_playwright() as p:
+    browser = p.chromium.launch(executable_path=r'C:\Program Files\Google\Chrome\Application\chrome.exe')
+    page = browser.new_page()
+    page.goto(f'file:///{html_path}')
+    page.pdf(
+        path=pdf_path,
+        format='A4',
+        print_background=True,
+        margin={
+            'top': '15mm',
+            'bottom': '15mm',
+            'left': '15mm',
+            'right': '15mm'
+        }
+    )
+    browser.close()
+
+print(f"Successfully generated Master PDF at: {pdf_path}")
+print(f"PDF File Size: {os.path.getsize(pdf_path)} bytes")
