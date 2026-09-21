@@ -19,6 +19,20 @@ const SessionSchema = new mongoose.Schema({
   riskScore: { type: Number, default: 0 },
   riskReasons: [{ type: String }],
   riskLevel: { type: String, enum: ['low', 'medium', 'high'], default: 'low' },
+  
+  // Continuous Firewall Scores (SWE3004 4-Module Architecture)
+  fingerprintIntegrityScore: { type: Number, default: 100.0 },
+  behavioralConsistencyScore: { type: Number, default: 100.0 },
+  
+  // Adaptive Response Graduated Action
+  adaptiveAction: {
+    type: String,
+    enum: ['ALLOW', 'STEP_UP_REAUTH', 'RESTRICT_ACCESS', 'TERMINATE'],
+    default: 'ALLOW'
+  },
+  restrictedOperations: [{ type: String }],
+  currentApplication: { type: String, default: 'General Gateway' },
+  
   status: {
     type: String,
     enum: ['Allowed', 'MFA Required', 'Blocked', 'Confirmed Fraud', 'Resolved'],

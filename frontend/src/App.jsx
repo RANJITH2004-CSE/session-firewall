@@ -5,6 +5,7 @@ import Navbar from './components/Navbar';
 import ScenarioBar from './components/ScenarioBar';
 import WasThisYouModal from './components/WasThisYouModal';
 import EmailInboxModal from './components/EmailInboxModal';
+import ThresholdConfigModal from './components/ThresholdConfigModal';
 import CustomerDashboard from './pages/CustomerDashboard';
 import ActiveSessions from './pages/ActiveSessions';
 import AdminDashboard from './pages/AdminDashboard';
@@ -16,6 +17,8 @@ function AppContent() {
   const { isEmailModalOpen, setIsEmailModalOpen, bannerAlert, setBannerAlert } = useSecurity();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [lastScenarioData, setLastScenarioData] = useState(null);
+  const [isThresholdModalOpen, setIsThresholdModalOpen] = useState(false);
 
   if (loading) {
     return (
@@ -37,10 +40,16 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col font-sans">
-      {/* 1-Click Demo Scenario Simulation Bar */}
-      <ScenarioBar onScenarioExecuted={() => setRefreshTrigger(prev => prev + 1)} />
+      {/* 1-Click SWE3004 Scenario Simulation Bar */}
+      <ScenarioBar
+        onScenarioExecuted={(scenarioData) => {
+          setRefreshTrigger(prev => prev + 1);
+          setLastScenarioData(scenarioData);
+        }}
+        onOpenThresholds={() => setIsThresholdModalOpen(true)}
+      />
 
-      {/* Main Banking Navbar */}
+      {/* Main Banking & Gateway Navbar */}
       <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
 
       {/* Global In-App "Was This You?" Modal */}
@@ -48,6 +57,13 @@ function AppContent() {
 
       {/* Simulated Email Mailbox Modal */}
       <EmailInboxModal isOpen={isEmailModalOpen} onClose={() => setIsEmailModalOpen(false)} />
+
+      {/* Global Threshold Configuration Modal (FR10) */}
+      <ThresholdConfigModal
+        isOpen={isThresholdModalOpen}
+        onClose={() => setIsThresholdModalOpen(false)}
+        onUpdated={() => setRefreshTrigger(prev => prev + 1)}
+      />
 
       {/* Global Notification Banner if triggered */}
       {bannerAlert && (
@@ -91,13 +107,17 @@ function AppContent() {
         ) : activeTab === 'sessions' ? (
           <ActiveSessions key={refreshTrigger} />
         ) : (
-          <CustomerDashboard key={refreshTrigger} setActiveTab={setActiveTab} />
+          <CustomerDashboard
+            key={refreshTrigger}
+            setActiveTab={setActiveTab}
+            lastScenarioData={lastScenarioData}
+          />
         )}
       </main>
 
       {/* Footer */}
       <footer className="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400 mt-auto">
-        <p>Session Firewall Security System • Demo Banking Application • Zero Real Financial Assets</p>
+        <p>Intent-Aware Continuous Session Authentication Firewall • VIT SWE3004 • 22MIS0155 Nathiya A</p>
       </footer>
     </div>
   );

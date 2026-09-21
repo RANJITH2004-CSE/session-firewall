@@ -5,5 +5,7 @@ const demoController = require('../controllers/demoController');
 router.post('/reset', demoController.resetDemoData);
 router.post('/scenario-safe', demoController.runScenarioSafeLogin);
 router.post('/scenario-suspicious', demoController.runScenarioSuspiciousLogin);
+router.post('/scenario-insider', demoController.runScenarioInsiderMisuse);
+router.post('/scenario-roaming', demoController.runScenarioNetworkRoaming);
 
 module.exports = router;

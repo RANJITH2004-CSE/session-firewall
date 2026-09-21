@@ -15,11 +15,14 @@ import {
   Laptop, 
   Smartphone, 
   UserCheck,
-  ChevronDown
+  ChevronDown,
+  Sliders
 } from 'lucide-react';
 import { adminApi } from '../services/api';
 import RiskBadge from '../components/RiskBadge';
 import ThreatChart from '../components/ThreatChart';
+import AuditLogViewer from '../components/AuditLogViewer';
+import ThresholdConfigModal from '../components/ThresholdConfigModal';
 
 export default function AdminDashboard() {
   const [sessions, setSessions] = useState([]);
@@ -27,6 +30,7 @@ export default function AdminDashboard() {
   const [chartData, setChartData] = useState([]);
   const [blocklist, setBlocklist] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isThresholdModalOpen, setIsThresholdModalOpen] = useState(false);
 
   // Filters
   const [statusFilter, setStatusFilter] = useState('ALL');
@@ -35,7 +39,7 @@ export default function AdminDashboard() {
   const [actionFeedback, setActionFeedback] = useState('');
 
   // Active Tab within Admin
-  const [activeAdminView, setActiveAdminView] = useState('sessions'); // 'sessions' | 'blocklist'
+  const [activeAdminView, setActiveAdminView] = useState('sessions'); // 'sessions' | 'audit' | 'blocklist'
 
   const fetchData = async () => {
     setLoading(true);
@@ -187,28 +191,50 @@ export default function AdminDashboard() {
       <ThreatChart data={chartData} />
 
       {/* Subnavigation between Sessions & Blocklist */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
-        <button
-          onClick={() => setActiveAdminView('sessions')}
-          className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${
-            activeAdminView === 'sessions'
-              ? 'bg-slate-900 text-white'
-              : 'text-slate-600 hover:bg-slate-100'
-          }`}
-        >
-          Suspicious Sessions & Telemetry
-        </button>
+      {/* Subnavigation between Sessions, AuditLogs, and Blocklist */}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setActiveAdminView('sessions')}
+            className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all ${
+              activeAdminView === 'sessions'
+                ? 'bg-slate-900 text-white'
+                : 'text-slate-600 hover:bg-slate-100'
+            }`}
+          >
+            Continuous Sessions & Telemetry
+          </button>
+
+          <button
+            onClick={() => setActiveAdminView('audit')}
+            className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 ${
+              activeAdminView === 'audit'
+                ? 'bg-slate-900 text-white'
+                : 'text-slate-600 hover:bg-slate-100'
+            }`}
+          >
+            <span>AuditLog Stream (FR9)</span>
+          </button>
+
+          <button
+            onClick={() => setActiveAdminView('blocklist')}
+            className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 ${
+              activeAdminView === 'blocklist'
+                ? 'bg-slate-900 text-white'
+                : 'text-slate-600 hover:bg-slate-100'
+            }`}
+          >
+            <Ban className="w-3.5 h-3.5" />
+            <span>Quarantine Blocklist ({blocklist.length})</span>
+          </button>
+        </div>
 
         <button
-          onClick={() => setActiveAdminView('blocklist')}
-          className={`px-4 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 ${
-            activeAdminView === 'blocklist'
-              ? 'bg-slate-900 text-white'
-              : 'text-slate-600 hover:bg-slate-100'
-          }`}
+          onClick={() => setIsThresholdModalOpen(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-800 text-xs font-semibold transition-all shadow-xs"
         >
-          <Ban className="w-3.5 h-3.5" />
-          <span>Active IP & Device Blocklist ({blocklist.length})</span>
+          <Sliders className="w-3.5 h-3.5 text-blue-600" />
+          <span>Policy Thresholds (FR10)</span>
         </button>
       </div>
 
@@ -410,6 +436,11 @@ export default function AdminDashboard() {
         </div>
       )}
 
+      {/* AuditLog Stream View (FR9) */}
+      {activeAdminView === 'audit' && (
+        <AuditLogViewer />
+      )}
+
       {/* Blocklist View */}
       {activeAdminView === 'blocklist' && (
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
@@ -482,6 +513,13 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+
+      {/* Threshold Configurator Modal (FR10) */}
+      <ThresholdConfigModal
+        isOpen={isThresholdModalOpen}
+        onClose={() => setIsThresholdModalOpen(false)}
+        onUpdated={fetchData}
+      />
     </div>
   );
 }

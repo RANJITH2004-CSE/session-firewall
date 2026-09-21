@@ -65,7 +65,25 @@ export const adminApi = {
 export const demoApi = {
   resetDemoData: () => api.post('/demo/reset'),
   runScenarioSafeLogin: () => api.post('/demo/scenario-safe'),
-  runScenarioSuspiciousLogin: () => api.post('/demo/scenario-suspicious')
+  runScenarioSuspiciousLogin: () => api.post('/demo/scenario-suspicious'),
+  runScenarioInsiderMisuse: () => api.post('/demo/scenario-insider'),
+  runScenarioNetworkRoaming: () => api.post('/demo/scenario-roaming')
+};
+
+export const gatewayApi = {
+  reportHeartbeat: (data) => api.post('/gateway/telemetry/heartbeat', data),
+  getEnterpriseOverview: () => api.get('/gateway/enterprise/overview'),
+  bulkExportEnterprise: () => api.post('/gateway/enterprise/bulk-export'),
+  escalateRoleEnterprise: (data) => api.post('/gateway/enterprise/role-escalation', data),
+  getSaasProjects: () => api.get('/gateway/saas/projects'),
+  exportSaasDb: () => api.post('/gateway/saas/export-database'),
+  deleteSaasWorkspace: () => api.post('/gateway/saas/delete-workspace')
+};
+
+export const auditApi = {
+  getLogs: (params) => api.get('/audit/logs', { params }),
+  getThresholds: () => api.get('/audit/thresholds'),
+  updateThresholds: (data) => api.post('/audit/thresholds', data)
 };
 
 export default api;
