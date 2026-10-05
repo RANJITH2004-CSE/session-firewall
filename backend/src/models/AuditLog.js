@@ -10,17 +10,23 @@ const AuditLogSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   userEmail: { type: String },
   
-  // Adaptive Action Triggered
+  // Event Type Category
+  eventType: {
+    type: String,
+    enum: ['LOGIN', 'RISK_CHANGE', 'OTP_EVENT', 'SENSITIVE_ACTION', 'SESSION_LIFECYCLE', 'DEVICE_ACTION', 'ADAPTIVE_EVALUATION'],
+    default: 'ADAPTIVE_EVALUATION'
+  },
+
+  // Adaptive Action Triggered or Operational Result
   action: {
     type: String,
-    enum: ['ALLOW', 'STEP_UP_REAUTH', 'RESTRICT_ACCESS', 'TERMINATE'],
     required: true
   },
   
   // Multi-Signal Scores
-  riskScore: { type: Number, required: true },
-  fingerprintIntegrityScore: { type: Number, required: true },
-  behavioralConsistencyScore: { type: Number, required: true },
+  riskScore: { type: Number, default: 0 },
+  fingerprintIntegrityScore: { type: Number, default: 100 },
+  behavioralConsistencyScore: { type: Number, default: 100 },
   
   // Context & Destination
   targetApplication: {

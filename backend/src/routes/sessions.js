@@ -8,6 +8,7 @@ router.use(authenticateToken);
 router.get('/', sessionController.getSessions);
 router.post('/mark-not-me', sessionController.markNotMe);
 router.post('/confirm-was-me', sessionController.confirmWasMe);
+router.post('/trust-device', sessionController.trustDevice);
 router.delete('/:sessionId', sessionController.terminateSession);
 
 module.exports = router;

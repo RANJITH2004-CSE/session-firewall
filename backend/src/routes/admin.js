@@ -7,6 +7,7 @@ router.use(authenticateToken);
 router.use(requireAdmin);
 
 router.get('/sessions', adminController.getSuspiciousSessions);
+router.get('/alerts', adminController.getSecurityAlerts);
 router.get('/metrics', adminController.getAdminMetrics);
 router.get('/blocklist', adminController.getBlocklist);
 router.post('/blocklist/toggle', adminController.toggleBlocklist);

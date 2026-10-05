@@ -35,6 +35,7 @@ api.interceptors.response.use(
 export const authApi = {
   login: (data) => api.post('/auth/login', data),
   verifyMfa: (data) => api.post('/auth/verify-mfa', data),
+  resendOtp: (data) => api.post('/auth/resend-otp', data),
   getMe: () => api.get('/auth/me'),
   logout: () => api.post('/auth/logout')
 };
@@ -43,6 +44,7 @@ export const sessionApi = {
   getSessions: () => api.get('/sessions'),
   markNotMe: (targetSessionId) => api.post('/sessions/mark-not-me', { targetSessionId }),
   confirmWasMe: (targetSessionId) => api.post('/sessions/confirm-was-me', { targetSessionId }),
+  trustDevice: (data) => api.post('/sessions/trust-device', data),
   terminateSession: (sessionId) => api.delete(`/sessions/${sessionId}`)
 };
 
@@ -55,6 +57,7 @@ export const bankApi = {
 
 export const adminApi = {
   getSessions: (params) => api.get('/admin/sessions', { params }),
+  getAlerts: (params) => api.get('/admin/alerts', { params }),
   getMetrics: () => api.get('/admin/metrics'),
   getBlocklist: () => api.get('/admin/blocklist'),
   toggleBlocklist: (data) => api.post('/admin/blocklist/toggle', data),

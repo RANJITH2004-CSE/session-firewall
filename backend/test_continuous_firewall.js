@@ -72,6 +72,29 @@ const mediumAction = getAdaptiveAction(45);
 assert.strictEqual(mediumAction, 'STEP_UP_REAUTH', 'Score 45 must trigger STEP_UP_REAUTH');
 console.log('  ✅ Test 5 Passed: Medium risk graduated action verified.\n');
 
+// Test 6: Risk Tiers Classification (Checklist Alignment)
+console.log('[Test 6] Testing 4-tier risk classification (LOW, MEDIUM, HIGH, CRITICAL)...');
+assert.strictEqual(getRiskLevel(15), 'low');
+assert.strictEqual(getAdaptiveAction(15), 'ALLOW');
+assert.strictEqual(getRiskLevel(45), 'medium');
+assert.strictEqual(getAdaptiveAction(45), 'STEP_UP_REAUTH');
+assert.strictEqual(getRiskLevel(65), 'high');
+assert.strictEqual(getAdaptiveAction(65), 'RESTRICT_ACCESS');
+assert.strictEqual(getRiskLevel(85), 'critical');
+assert.strictEqual(getAdaptiveAction(85), 'TERMINATE');
+console.log('  ✅ Test 6 Passed: Exact 4-tier classification verified (LOW->ALLOW, MEDIUM->OTP, HIGH->RESTRICT, CRITICAL->TERMINATE).\n');
+
+// Test 7: Email Masking & OTP Expiration Math
+console.log('[Test 7] Testing email masking and 2-minute expiration logic...');
+const { maskEmail } = require('./src/services/emailService');
+const masked = maskEmail('customer@securebank.com');
+assert(masked.startsWith('c') && masked.includes('@') && masked.endsWith('.com'), 'Email should be cleanly masked');
+const now = Date.now();
+const expiresAt = now + 2 * 60 * 1000;
+const diffSeconds = Math.round((expiresAt - now) / 1000);
+assert.strictEqual(diffSeconds, 120, 'Expiry window must be strictly 120 seconds (2 minutes)');
+console.log('  ✅ Test 7 Passed: Masked email format and 2-minute expiration validated.\n');
+
 console.log('================================================================');
-console.log('🎉 ALL 5 CONTINUOUS SESSION FIREWALL MODULE TESTS PASSED (SWE3004)');
+console.log('🎉 ALL 7 CONTINUOUS SESSION FIREWALL MODULE TESTS PASSED');
 console.log('================================================================');

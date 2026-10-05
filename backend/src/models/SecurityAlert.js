@@ -5,11 +5,22 @@ const SecurityAlertSchema = new mongoose.Schema({
   sessionId: { type: String, required: true },
   alertType: {
     type: String,
-    enum: ['SUSPICIOUS_LOGIN', 'IMPOSSIBLE_TRAVEL', 'FAILED_LOGIN_SPIKE', 'SESSION_HIJACK_ATTEMPT', 'UNUSUAL_TRANSFER'],
+    enum: [
+      'NEW_DEVICE',
+      'CREDENTIAL_MISUSE',
+      'RISK_INCREASE',
+      'RESTRICTED_OPERATION',
+      'SESSION_TERMINATION',
+      'SUSPICIOUS_LOGIN',
+      'IMPOSSIBLE_TRAVEL',
+      'FAILED_LOGIN_SPIKE',
+      'SESSION_HIJACK_ATTEMPT',
+      'UNUSUAL_TRANSFER'
+    ],
     default: 'SUSPICIOUS_LOGIN'
   },
   riskScore: { type: Number, required: true },
-  riskLevel: { type: String, enum: ['low', 'medium', 'high'], required: true },
+  riskLevel: { type: String, enum: ['low', 'medium', 'high', 'critical'], required: true },
   riskReasons: [{ type: String }],
   details: {
     device: String,

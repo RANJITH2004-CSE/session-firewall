@@ -43,7 +43,7 @@ async function getOrCreateProfile(userId) {
  * @param {String} params.method - e.g. "POST"
  * @param {Boolean} params.isSensitiveOperation
  */
-async function evaluateBehavioralIntent({ sessionId, userId, endpoint, method = 'GET', isSensitiveOperation = false }) {
+async function evaluateBehavioralIntent({ sessionId, userId, endpoint, method = 'GET', isSensitiveOperation = false, biometrics = {} }) {
   const profile = await getOrCreateProfile(userId);
   const now = Date.now();
 
@@ -91,7 +91,34 @@ async function evaluateBehavioralIntent({ sessionId, userId, endpoint, method = 
     deviationReasons.push(`Anomalous navigation sequence: immediate direct jump to sensitive endpoint "${endpoint}"`);
   }
 
-  // 4. Temporal Outlier Check (Outside typical working hours)
+  // 4. Biometric Keystroke Dynamics Analysis
+  if (biometrics?.typingDynamics) {
+    const { avgDwellMs, avgFlightMs, keystrokesCount } = biometrics.typingDynamics;
+    if (keystrokesCount > 3) {
+      // Inhumanly fast key presses indicate automated paste or script injection
+      if (avgDwellMs < 20 || avgFlightMs < 25) {
+        penalty += 35;
+        deviationReasons.push(`Inhuman typing dynamics: avg dwell ${avgDwellMs}ms, flight ${avgFlightMs}ms (bot keystroke injection detected)`);
+      } else if (avgDwellMs > 800) {
+        penalty += 10;
+        deviationReasons.push(`Abnormally high keystroke hesitation (${avgDwellMs}ms dwell)`);
+      }
+    }
+  }
+
+  // 5. Biometric Mouse & Cursor Trajectory Dynamics
+  if (biometrics?.mouseDynamics) {
+    const { movesCount, avgSpeed, jitterScore, isHeadless } = biometrics.mouseDynamics;
+    if (isHeadless || (movesCount === 0 && method === 'POST')) {
+      penalty += 30;
+      deviationReasons.push('Headless or zero-cursor activity detected prior to sensitive submission');
+    } else if (jitterScore !== undefined && jitterScore === 0 && movesCount > 10) {
+      penalty += 20;
+      deviationReasons.push('Linear non-human cursor trajectory detected (bot automation)');
+    }
+  }
+
+  // 6. Temporal Outlier Check (Outside typical working hours)
   const currentHour = new Date().getHours();
   if (profile.typicalActiveHours && profile.typicalActiveHours.length > 0 && !profile.typicalActiveHours.includes(currentHour)) {
     penalty += 10;

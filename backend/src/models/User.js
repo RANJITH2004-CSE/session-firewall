@@ -19,7 +19,8 @@ const UserSchema = new mongoose.Schema({
     country: String
   }],
   tempMfaCode: { type: String },
-  tempMfaExpiresAt: { type: Date }
+  tempMfaExpiresAt: { type: Date },
+  tempMfaAttempts: { type: Number, default: 0 }
 }, {
   timestamps: true
 });

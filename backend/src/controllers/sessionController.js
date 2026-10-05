@@ -281,9 +281,57 @@ async function terminateSession(req, res) {
   }
 }
 
+/**
+ * Customer or admin explicitly trusts a device signature
+ */
+async function trustDevice(req, res) {
+  try {
+    const { deviceName, sessionId } = req.body;
+    const user = req.user;
+
+    let targetDevice = deviceName;
+    if (!targetDevice && sessionId) {
+      const session = await Session.findOne({ sessionId });
+      if (session) targetDevice = session.device;
+    }
+
+    if (!targetDevice) {
+      return res.status(400).json({ success: false, message: 'Device signature or session ID required.' });
+    }
+
+    if (!user.trustedDevices.includes(targetDevice)) {
+      user.trustedDevices.push(targetDevice);
+      await user.save();
+    }
+
+    const AuditLog = require('../models/AuditLog');
+    const { v4: uuidv4 } = require('uuid');
+    await AuditLog.create({
+      logId: 'AUD-' + uuidv4().substring(0, 10).toUpperCase(),
+      sessionId: sessionId || req.sessionDoc?.sessionId || 'SES-TRUST',
+      userId: user._id,
+      userEmail: user.email,
+      eventType: 'DEVICE_ACTION',
+      action: 'ALLOW',
+      riskScore: 0,
+      reason: `Device "${targetDevice}" added to trusted profile.`
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `Device "${targetDevice}" is now trusted for future logins.`,
+      trustedDevices: user.trustedDevices
+    });
+  } catch (err) {
+    console.error('[SessionController.trustDevice] Error:', err);
+    return res.status(500).json({ success: false, message: 'Failed to trust device.' });
+  }
+}
+
 module.exports = {
   getSessions,
   markNotMe,
   confirmWasMe,
-  terminateSession
+  terminateSession,
+  trustDevice
 };

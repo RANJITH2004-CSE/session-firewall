@@ -12,12 +12,13 @@ const RISK_POINTS = {
   LARGE_UNUSUAL_TRANSFER: 25
 };
 
-// Configurable Risk Thresholds (FR10)
+// Configurable Risk Thresholds (Aligned with Final Checklist: LOW -> Allow, MEDIUM -> OTP, HIGH -> Restrict, CRITICAL -> Terminate)
 let RISK_THRESHOLDS = {
-  LOW_MAX: 29,         // 0 - 29: Silent allow
-  MEDIUM_MAX: 59,      // 30 - 59: Step-up re-authentication
-  ELEVATED_MAX: 74,    // 60 - 74: Restrict sensitive operations
-  HIGH_MIN: 75         // 75+: Forced session termination
+  LOW_MAX: 29,         // 0 - 29: LOW -> Allow
+  MEDIUM_MAX: 59,      // 30 - 59: MEDIUM -> OTP verification
+  HIGH_MAX: 74,        // 60 - 74: HIGH -> Restrict sensitive operations
+  CRITICAL_MIN: 75,    // 75+: CRITICAL -> Terminate session
+  HIGH_MIN: 75         // Alias for backward compatibility
 };
 
 function setRiskThresholds(newThresholds) {
@@ -30,20 +31,22 @@ function getRiskThresholds() {
 }
 
 /**
- * Determine risk level category based on numerical score
+ * Determine risk level category based on numerical score:
+ * LOW (0-29) | MEDIUM (30-59) | HIGH (60-74) | CRITICAL (75-100)
  */
 function getRiskLevel(score) {
-  if (score >= RISK_THRESHOLDS.HIGH_MIN) return 'high';
-  if (score >= 60) return 'elevated';
+  if (score >= (RISK_THRESHOLDS.CRITICAL_MIN || 75)) return 'critical';
+  if (score >= 60) return 'high';
   if (score >= 30) return 'medium';
   return 'low';
 }
 
 /**
- * Maps risk score to Graduated Adaptive Action (FR6, FR7, FR8)
+ * Maps risk score to Graduated Adaptive Action:
+ * LOW -> ALLOW | MEDIUM -> STEP_UP_REAUTH | HIGH -> RESTRICT_ACCESS | CRITICAL -> TERMINATE
  */
 function getAdaptiveAction(score) {
-  if (score >= RISK_THRESHOLDS.HIGH_MIN) return 'TERMINATE';
+  if (score >= (RISK_THRESHOLDS.CRITICAL_MIN || 75)) return 'TERMINATE';
   if (score >= 60) return 'RESTRICT_ACCESS';
   if (score >= 30) return 'STEP_UP_REAUTH';
   return 'ALLOW';

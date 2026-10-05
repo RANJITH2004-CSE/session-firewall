@@ -18,7 +18,7 @@ const SessionSchema = new mongoose.Schema({
   isVpn: { type: Boolean, default: false },
   riskScore: { type: Number, default: 0 },
   riskReasons: [{ type: String }],
-  riskLevel: { type: String, enum: ['low', 'medium', 'high'], default: 'low' },
+  riskLevel: { type: String, enum: ['low', 'medium', 'high', 'critical'], default: 'low' },
   
   // Continuous Firewall Scores (SWE3004 4-Module Architecture)
   fingerprintIntegrityScore: { type: Number, default: 100.0 },
@@ -35,7 +35,7 @@ const SessionSchema = new mongoose.Schema({
   
   status: {
     type: String,
-    enum: ['Allowed', 'MFA Required', 'Blocked', 'Confirmed Fraud', 'Resolved'],
+    enum: ['Allowed', 'OTP Verification Required', 'MFA Required', 'Restricted', 'Blocked', 'Terminated', 'Confirmed Fraud', 'Resolved'],
     default: 'Allowed'
   },
   isActive: { type: Boolean, default: true },

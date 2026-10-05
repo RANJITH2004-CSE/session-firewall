@@ -16,7 +16,14 @@ import {
   Smartphone, 
   UserCheck,
   ChevronDown,
-  Sliders
+  Sliders,
+  Bell,
+  Zap,
+  MonitorX,
+  KeyRound,
+  TrendingUp,
+  OctagonX,
+  XCircle
 } from 'lucide-react';
 import { adminApi } from '../services/api';
 import RiskBadge from '../components/RiskBadge';
@@ -29,6 +36,7 @@ export default function AdminDashboard() {
   const [metrics, setMetrics] = useState(null);
   const [chartData, setChartData] = useState([]);
   const [blocklist, setBlocklist] = useState([]);
+  const [securityAlerts, setSecurityAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isThresholdModalOpen, setIsThresholdModalOpen] = useState(false);
 
@@ -36,22 +44,24 @@ export default function AdminDashboard() {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [riskFilter, setRiskFilter] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
+  const [alertTypeFilter, setAlertTypeFilter] = useState('ALL');
   const [actionFeedback, setActionFeedback] = useState('');
 
   // Active Tab within Admin
-  const [activeAdminView, setActiveAdminView] = useState('sessions'); // 'sessions' | 'audit' | 'blocklist'
+  const [activeAdminView, setActiveAdminView] = useState('sessions'); // 'sessions' | 'alerts' | 'audit' | 'blocklist'
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [sessRes, metRes, blockRes] = await Promise.all([
+      const [sessRes, metRes, blockRes, alertsRes] = await Promise.all([
         adminApi.getSessions({
           status: statusFilter,
           riskLevel: riskFilter,
           search: searchTerm
         }),
         adminApi.getMetrics(),
-        adminApi.getBlocklist()
+        adminApi.getBlocklist(),
+        adminApi.getAlerts({ alertType: alertTypeFilter !== 'ALL' ? alertTypeFilter : undefined }).catch(() => ({ data: { alerts: [] } }))
       ]);
 
       if (sessRes.data.success) {
@@ -63,6 +73,9 @@ export default function AdminDashboard() {
       }
       if (blockRes.data.success) {
         setBlocklist(blockRes.data.blocklist);
+      }
+      if (alertsRes.data.alerts) {
+        setSecurityAlerts(alertsRes.data.alerts);
       }
     } catch (err) {
       console.error('Failed to load admin data:', err);
@@ -206,6 +219,18 @@ export default function AdminDashboard() {
           </button>
 
           <button
+            onClick={() => setActiveAdminView('alerts')}
+            className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 ${
+              activeAdminView === 'alerts'
+                ? 'bg-red-700 text-white'
+                : 'text-red-600 hover:bg-red-50 border border-red-200'
+            }`}
+          >
+            <Bell className="w-3.5 h-3.5" />
+            <span>Security Alerts ({securityAlerts.length})</span>
+          </button>
+
+          <button
             onClick={() => setActiveAdminView('audit')}
             className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 ${
               activeAdminView === 'audit'
@@ -237,6 +262,89 @@ export default function AdminDashboard() {
           <span>Policy Thresholds (FR10)</span>
         </button>
       </div>
+
+      {/* Security Alerts View */}
+      {activeAdminView === 'alerts' && (
+        <div className="space-y-4">
+          {/* Alert Category Filters */}
+          <div className="flex flex-wrap items-center gap-2">
+            {[
+              { key: 'ALL', label: 'All Alerts', icon: Bell, color: 'slate' },
+              { key: 'NEW_DEVICE', label: 'New Device', icon: MonitorX, color: 'blue' },
+              { key: 'CREDENTIAL_MISUSE', label: 'Credential Misuse', icon: KeyRound, color: 'orange' },
+              { key: 'RISK_INCREASE', label: 'Risk Increase', icon: TrendingUp, color: 'amber' },
+              { key: 'RESTRICTED_OPERATION', label: 'Restricted Op', icon: OctagonX, color: 'red' },
+              { key: 'SESSION_TERMINATION', label: 'Session Terminated', icon: XCircle, color: 'rose' },
+            ].map(({ key, label, icon: Icon, color }) => (
+              <button
+                key={key}
+                onClick={() => {
+                  setAlertTypeFilter(key);
+                  fetchData();
+                }}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                  alertTypeFilter === key
+                    ? `bg-${color}-700 text-white border-${color}-700`
+                    : `text-${color}-700 border-${color}-200 hover:bg-${color}-50 bg-white`
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {securityAlerts.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-slate-200 p-10 text-center text-slate-500">
+              <ShieldCheck className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
+              <p className="font-semibold">No security alerts</p>
+              <p className="text-xs text-slate-400 mt-1">The firewall has not triggered any alerts for this filter.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {securityAlerts.map((alert) => {
+                const alertMeta = {
+                  NEW_DEVICE: { icon: MonitorX, color: 'blue', label: 'New Device Detected' },
+                  CREDENTIAL_MISUSE: { icon: KeyRound, color: 'orange', label: 'Credential Misuse' },
+                  RISK_INCREASE: { icon: TrendingUp, color: 'amber', label: 'Risk Score Increase' },
+                  RESTRICTED_OPERATION: { icon: OctagonX, color: 'red', label: 'Restricted Operation' },
+                  SESSION_TERMINATION: { icon: XCircle, color: 'rose', label: 'Session Terminated' },
+                }[alert.alertType] || { icon: Bell, color: 'slate', label: alert.alertType };
+                const Icon = alertMeta.icon;
+
+                return (
+                  <div key={alert._id} className={`bg-white rounded-2xl border border-${alertMeta.color}-200 p-4 flex items-start gap-3 shadow-sm`}>
+                    <div className={`p-2 rounded-xl bg-${alertMeta.color}-50 border border-${alertMeta.color}-200 flex-shrink-0`}>
+                      <Icon className={`w-4 h-4 text-${alertMeta.color}-600`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <p className="text-xs font-bold text-slate-900">{alertMeta.label}</p>
+                        <div className="flex items-center gap-2">
+                          <RiskBadge level={alert.riskLevel} score={alert.riskScore || 0} showScore={!!alert.riskScore} />
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                            alert.status === 'RESOLVED' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              : alert.status === 'REVIEWED' ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                              : 'bg-amber-50 text-amber-700 border border-amber-200'
+                          }`}>
+                            {alert.status || 'OPEN'}
+                          </span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-slate-600 mt-1">{alert.message || alert.description || 'No description'}</p>
+                      <div className="flex items-center gap-4 mt-2 text-[10px] text-slate-400">
+                        {alert.userId?.name && <span>👤 {alert.userId.name}</span>}
+                        {alert.sessionId && <span>Session: {String(alert.sessionId).slice(-8)}</span>}
+                        <span>{new Date(alert.createdAt).toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Sessions View */}
       {activeAdminView === 'sessions' && (

@@ -4,6 +4,7 @@ import {
   Send, 
   ShieldCheck, 
   ShieldAlert, 
+  ShieldX,
   Lock, 
   ArrowUpRight, 
   ArrowDownLeft, 
@@ -11,9 +12,11 @@ import {
   Globe, 
   Clock, 
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  CheckCheck,
+  Zap
 } from 'lucide-react';
-import { bankApi } from '../services/api';
+import { bankApi, sessionApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useSecurity } from '../context/SecurityContext';
 import TransferModal from '../components/TransferModal';
@@ -24,6 +27,7 @@ import EnterprisePortalView from '../components/EnterprisePortalView';
 import SaasWorkspaceView from '../components/SaasWorkspaceView';
 import DynamicFingerprintCollector from '../components/DynamicFingerprintCollector';
 
+
 export default function CustomerDashboard({ setActiveTab, lastScenarioData }) {
   const { user, currentSession, refreshUser } = useAuth();
   const { pendingChallenge } = useSecurity();
@@ -31,6 +35,9 @@ export default function CustomerDashboard({ setActiveTab, lastScenarioData }) {
   const [loading, setLoading] = useState(true);
   const [isTransferOpen, setIsTransferOpen] = useState(false);
   const [activeApp, setActiveApp] = useState('banking'); // 'banking' | 'enterprise' | 'saas'
+  const [deviceTrusted, setDeviceTrusted] = useState(false);
+  const [trustLoading, setTrustLoading] = useState(false);
+  const [trustSuccess, setTrustSuccess] = useState(false);
 
   // Live continuous firewall telemetry state
   const [continuousScores, setContinuousScores] = useState({
@@ -40,6 +47,25 @@ export default function CustomerDashboard({ setActiveTab, lastScenarioData }) {
     action: currentSession?.adaptiveAction || 'ALLOW',
     reasons: currentSession?.riskReasons || []
   });
+
+  const handleTrustDevice = async () => {
+    if (!currentSession) return;
+    setTrustLoading(true);
+    try {
+      // Backend expects { sessionId: 'SES-...' } or { deviceName: '...' }
+      await sessionApi.trustDevice({
+        sessionId: currentSession.sessionId,
+        deviceName: currentSession.device
+      });
+      setDeviceTrusted(true);
+      setTrustSuccess(true);
+      setTimeout(() => setTrustSuccess(false), 3000);
+    } catch (err) {
+      console.warn('Trust device failed:', err);
+    } finally {
+      setTrustLoading(false);
+    }
+  };
 
   // If a scenario was triggered via the top bar, update the widget immediately
   useEffect(() => {
@@ -113,6 +139,53 @@ export default function CustomerDashboard({ setActiveTab, lastScenarioData }) {
               </p>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* HIGH Risk — Restricted Session Banner */}
+      {continuousScores.action === 'RESTRICT_ACCESS' && !isTransfersLocked && (
+        <div className="bg-orange-50 border-l-4 border-l-orange-500 p-4 rounded-2xl flex items-start gap-3">
+          <div className="p-2 bg-orange-100 rounded-xl">
+            <ShieldX className="w-5 h-5 text-orange-700" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-orange-950">
+              High Risk Session — Sensitive Operations Restricted
+            </h3>
+            <p className="text-xs text-orange-800 mt-0.5">
+              Your real-time risk score is elevated. Transfers and high-value actions are disabled until your session risk normalizes.
+            </p>
+            <div className="flex flex-wrap gap-2 mt-2 text-[11px] text-orange-700">
+              {continuousScores.reasons?.map((r, i) => (
+                <span key={i} className="bg-orange-100 border border-orange-200 px-2 py-0.5 rounded-full">⚠ {r}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CRITICAL Risk — Session Terminated Banner */}
+      {continuousScores.action === 'TERMINATE' && (
+        <div className="bg-red-100 border-l-4 border-l-red-700 p-4 rounded-2xl flex items-start gap-3 animate-pulse">
+          <div className="p-2 bg-red-200 rounded-xl">
+            <Zap className="w-5 h-5 text-red-800" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-red-950">
+              CRITICAL: Session Under Firewall Termination
+            </h3>
+            <p className="text-xs text-red-800 mt-0.5">
+              Continuous behavioral and fingerprint fusion detected critical risk. Your session will be terminated and security team has been alerted.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Trust Device Success Toast */}
+      {trustSuccess && (
+        <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3 flex items-center gap-2.5 text-xs text-emerald-800 font-semibold animate-fade-in">
+          <CheckCheck className="w-4 h-4 text-emerald-600" />
+          Device trusted successfully! You won't need OTP verification on this device next time.
         </div>
       )}
 
@@ -238,6 +311,23 @@ export default function CustomerDashboard({ setActiveTab, lastScenarioData }) {
                   {continuousScores.action}
                 </span>
               </div>
+
+              {/* Trust Device Button */}
+              {!deviceTrusted ? (
+                <button
+                  onClick={handleTrustDevice}
+                  disabled={trustLoading}
+                  className="w-full mt-2 py-1.5 text-xs font-semibold rounded-xl border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  {trustLoading ? 'Trusting Device...' : 'Trust This Device'}
+                </button>
+              ) : (
+                <div className="w-full mt-2 py-1.5 text-xs font-semibold rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center gap-1.5 border border-emerald-200">
+                  <CheckCheck className="w-3.5 h-3.5" />
+                  Device Trusted ✓
+                </div>
+              )}
             </div>
 
             {/* Continuous Zero-Trust Architecture Card */}

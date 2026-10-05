@@ -268,11 +268,44 @@ async function toggleUserTransfers(req, res) {
   }
 }
 
+/**
+ * Get all security alerts (New device, Credential misuse, Risk increase, Restricted operation, Session termination)
+ */
+async function getSecurityAlerts(req, res) {
+  try {
+    const { alertType, riskLevel } = req.query;
+    const query = {};
+
+    if (alertType && alertType !== 'ALL') {
+      query.alertType = alertType;
+    }
+
+    if (riskLevel && riskLevel !== 'ALL') {
+      query.riskLevel = riskLevel.toLowerCase();
+    }
+
+    const alerts = await SecurityAlert.find(query)
+      .populate('userId', 'name email accountNumber transfersLocked')
+      .sort({ createdAt: -1 })
+      .limit(100);
+
+    return res.status(200).json({
+      success: true,
+      count: alerts.length,
+      alerts
+    });
+  } catch (err) {
+    console.error('[AdminController.getSecurityAlerts] Error:', err);
+    return res.status(500).json({ success: false, message: 'Failed to retrieve security alerts.' });
+  }
+}
+
 module.exports = {
   getSuspiciousSessions,
   getAdminMetrics,
   getBlocklist,
   toggleBlocklist,
   updateSessionStatus,
-  toggleUserTransfers
+  toggleUserTransfers,
+  getSecurityAlerts
 };
